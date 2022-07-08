@@ -52,184 +52,169 @@ import numpy as np
 #             shutil.copy(src,dsc)
 
 ##AUGMENTATION##
-image_file="test/ab.jpg"
-image=cv2.imread(image_file)
-
 def brightness(img):
-    low=0.8
-    high=1.4
-    value = random.uniform(low, high)
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    hsv = np.array(hsv, dtype = np.float64)
-    hsv[:,:,1] = hsv[:,:,1]*value
-    hsv[:,:,1][hsv[:,:,1]>255]  = 255
-    hsv[:,:,2] = hsv[:,:,2]*value
-    hsv[:,:,2][hsv[:,:,2]>255]  = 255
-    hsv = np.array(hsv, dtype = np.uint8)
-    img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    cv2.imwrite("test/agtest.jpg",img)
-    return img
-
-def channel_shift(img):
-    value=50
-    value = int(random.uniform(-value, value))
-    img = img + value
-    img[:,:,:][img[:,:,:]>255]  = 255
-    img[:,:,:][img[:,:,:]<0]  = 0
-    img = img.astype(np.uint16)
-    cv2.imwrite("test/agtest.jpg",img)
-    return img
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(img)
+        img=cv2.imread(path)
+        low=0.8
+        high=1.4
+        value = random.uniform(low, high)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        hsv = np.array(hsv, dtype = np.float64)
+        hsv[:,:,1] = hsv[:,:,1]*value
+        hsv[:,:,1][hsv[:,:,1]>255]  = 255
+        hsv[:,:,2] = hsv[:,:,2]*value
+        hsv[:,:,2][hsv[:,:,2]>255]  = 255
+        hsv = np.array(hsv, dtype = np.uint8)
+        img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        cv2.imwrite(path,img)
 
 def rotation(img):
-    angle=10
-    angle = int(random.uniform(-angle, angle))
-    h, w = img.shape[:2]
-    M = cv2.getRotationMatrix2D((int(w/2), int(h/2)), angle, 1)
-    img = cv2.warpAffine(img, M, (w, h))
-    cv2.imwrite("test/agtest.jpg",img)
-    return img
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(img)
+        img=cv2.imread(path)
+        angle=4
+        angle = int(random.uniform(-angle, angle))
+        h, w = img.shape[:2]
+        M = cv2.getRotationMatrix2D((int(w/2), int(h/2)), angle, 1)
+        img = cv2.warpAffine(img, M, (w, h))
+        cv2.imwrite(path,img)
 
-def noisy(image):
-    noise_typ="gauss"
-    if noise_typ == "gauss":
-        row,col,ch= image.shape
-        mean = 0
-        var = 0.1
-        sigma = var**0.5
-        gauss = np.random.normal(mean,sigma,(row,col,ch))
-        gauss = gauss.reshape(row,col,ch)
-        noisy = image + gauss
-        cv2.imwrite("test/agtest.jpg",noisy)
-        return noisy
-    elif noise_typ == "s&p":
-        row,col,ch = image.shape
-        s_vs_p = 0.5
-        amount = 0.004
-        out = np.copy(image)
-        # Salt mode
-        num_salt = np.ceil(amount * image.size * s_vs_p)
-        coords = [np.random.randint(0, i - 1, int(num_salt))
-                  for i in image.shape]
-        out[coords] = 1
 
-        # Pepper mode
-        num_pepper = np.ceil(amount* image.size * (1. - s_vs_p))
-        coords = [np.random.randint(0, i - 1, int(num_pepper))
-                  for i in image.shape]
-        out[coords] = 0
-        cv2.imwrite("test/agtest.jpg",noisy)
-        return out
-    elif noise_typ == "poisson":
-        vals = len(np.unique(image))
-        vals = 2 ** np.ceil(np.log2(vals))
-        noisy = np.random.poisson(image * vals) / float(vals)
-        cv2.imwrite("test/agtest.jpg",noisy)
-        return noisy
-    elif noise_typ =="speckle":
-        row,col,ch = image.shape
-        gauss = np.random.randn(row,col,ch)
-        gauss = gauss.reshape(row,col,ch)
-        noisy = image + image * gauss
-        cv2.imwrite("test/agtest.jpg",noisy)
-        return noisy
+def add_light(image):
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        gamma=random.uniform(0.7,3.0)
+        invGamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255
+                          for i in np.arange(0, 256)]).astype("uint8")
 
-def add_light(image, gamma=1.0):
-    invGamma = 1.0 / gamma
-    table = np.array([((i / 255.0) ** invGamma) * 255
-                      for i in np.arange(0, 256)]).astype("uint8")
+        image=cv2.LUT(image, table)
+        if gamma>=1:
+            cv2.imwrite(path,image)
+        else:
+            cv2.imwrite(path,image)
 
-    image=cv2.LUT(image, table)
-    if gamma>=1:
-        cv2.imwrite(Folder_name + "/light-"+str(gamma)+Extension, image)
-    else:
-        cv2.imwrite(Folder_name + "/dark-" + str(gamma) + Extension, image)
+def saturation_image(image):
+    probability = random.randrange(0, 100)
+    if probability <= 60:
+        path=str(image)
+        image=cv2.imread(path)
+        saturation=random.uniform(1,50)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-def add_light_color(image, color, gamma=1.0):
-    invGamma = 1.0 / gamma
-    image = (color - image)
-    table = np.array([((i / 255.0) ** invGamma) * 255
-                      for i in np.arange(0, 256)]).astype("uint8")
+        v = image[:, :, 2]
+        v = np.where(v <= 255 - saturation, v + saturation, 255)
+        image[:, :, 2] = v
 
-    image=cv2.LUT(image, table)
-    if gamma>=1:
-        cv2.imwrite(Folder_name + "/light_color-"+str(gamma)+Extension, image)
-    else:
-        cv2.imwrite(Folder_name + "/dark_color" + str(gamma) + Extension, image)
+        image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+        cv2.imwrite(path,image)
 
-def saturation_image(image,saturation):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+def gausian_blur(image):
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        blur=random.uniform(1,5)
+        image = cv2.GaussianBlur(image,(5,5),blur)
+        cv2.imwrite(path,image)
 
-    v = image[:, :, 2]
-    v = np.where(v <= 255 - saturation, v + saturation, 255)
-    image[:, :, 2] = v
+def erosion_image(image):
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        shift=random.randrange(1,3)
+        kernel = np.ones((shift,shift),np.uint8)
+        image = cv2.erode(image,kernel,iterations = 1)
+        cv2.imwrite(path,image)
 
-    image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
-    cv2.imwrite(Folder_name + "/saturation-" + str(saturation) + Extension, image)
+def dilation_image(image):
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        shift=random.randrange(1,3)
+        kernel = np.ones((shift, shift), np.uint8)
+        image = cv2.dilate(image,kernel,iterations = 1)
+        cv2.imwrite(path,image)
 
-def hue_image(image,saturation):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+def opening_image(image):
+    probability = random.randrange(0, 100)
+    if probability >= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        shift=random.randrange(1,3)
+        kernel = np.ones((shift, shift), np.uint8)
+        image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+        cv2.imwrite(path,image)
 
-    v = image[:, :, 2]
-    v = np.where(v <= 255 + saturation, v - saturation, 255)
-    image[:, :, 2] = v
-
-    image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
-    cv2.imwrite(Folder_name + "/hue-" + str(saturation) + Extension, image)
-
-def gausian_blur(image,blur):
-    image = cv2.GaussianBlur(image,(5,5),blur)
-    cv2.imwrite(Folder_name+"/GausianBLur-"+str(blur)+Extension, image)
-
-def erosion_image(image,shift):
-    kernel = np.ones((shift,shift),np.uint8)
-    image = cv2.erode(image,kernel,iterations = 1)
-    cv2.imwrite(Folder_name + "/Erosion-"+"*"+str(shift) + Extension, image)
-
-def dilation_image(image,shift):
-    kernel = np.ones((shift, shift), np.uint8)
-    image = cv2.dilate(image,kernel,iterations = 1)
-    cv2.imwrite(Folder_name + "/Dilation-" + "*" + str(shift)+ Extension, image)
-
-def opening_image(image,shift):
-    kernel = np.ones((shift, shift), np.uint8)
-    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
-    cv2.imwrite(Folder_name + "/Opening-" + "*" + str(shift)+ Extension, image)
-
-def closing_image(image, shift):
-    kernel = np.ones((shift, shift), np.uint8)
-    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
-    cv2.imwrite(Folder_name + "/Closing-" + "*" + str(shift) + Extension, image)
-
-def morphological_gradient_image(image, shift):
-    kernel = np.ones((shift, shift), np.uint8)
-    image = cv2.morphologyEx(image, cv2.MORPH_GRADIENT, kernel)
-    cv2.imwrite(Folder_name + "/Morphological_Gradient-" + "*" + str(shift) + Extension, image)
-
-def multiply_image(image,R,G,B):
-    image=image*[R,G,B]
-    cv2.imwrite(Folder_name+"/Multiply-"+str(R)+"*"+str(G)+"*"+str(B)+Extension, image)
+def closing_image(image):
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        shift=random.randrange(1,3)
+        kernel = np.ones((shift, shift), np.uint8)
+        image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+        cv2.imwrite(path,image)
 
 def sharpen_image(image):
-    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-    image = cv2.filter2D(image, -1, kernel)
-    cv2.imwrite(Folder_name+"/Sharpen-"+Extension, image)
+    probability = random.randrange(0, 100)
+    if probability <= 30:
+        path=str(image)
+        image=cv2.imread(path)
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+        image = cv2.filter2D(image, -1, kernel)
+        cv2.imwrite(path,image)
 
-def salt_and_paper_image(image,p,a):
-    noisy=image
-    #salt
-    num_salt = np.ceil(a * image.size * p)
-    coords = [np.random.randint(0, i - 1, int(num_salt))
-              for i in image.shape]
-    noisy[coords] = 1
 
-    #paper
-    num_pepper = np.ceil(a * image.size * (1. - p))
-    coords = [np.random.randint(0, i - 1, int(num_pepper))
-              for i in image.shape]
-    noisy[coords] = 0
-    cv2.imwrite(Folder_name + "/Salt_And_Paper-" + str(p) + "*" + str(a) + Extension, image)
 
-#brightness(image)
-#TODOchannel_shift(image)
-#rotation(image)
-#noisy(image)
+def sp_noise(image):
+    probability = random.randrange(0, 100)
+    if probability <= 60:
+        path=str(image)
+        image=cv2.imread(path)
+        prob=random.uniform(0.01,0.02)
+        output = np.zeros(image.shape,np.uint8)
+        thres = 1 - prob
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                rdn = random.random()
+                if rdn < prob:
+                    output[i][j] = 0
+                elif rdn > thres:
+                    output[i][j] = 255
+                else:
+                    output[i][j] = image[i][j]
+        cv2.imwrite(path,output)
+
+for i in range(52):
+    listdr=os.listdir(str(i))
+    for u in range(len(listdr)):
+        if len(listdr) >1:
+            brightness(str(i)+"/"+listdr[u])
+            rotation(str(i)+"/"+listdr[u])
+            add_light(str(i)+"/"+listdr[u])
+            saturation_image(str(i)+"/"+listdr[u])
+            gausian_blur(str(i)+"/"+listdr[u])
+            erosion_image(str(i)+"/"+listdr[u])
+            dilation_image(str(i)+"/"+listdr[u])
+            opening_image(str(i)+"/"+listdr[u])
+            closing_image(str(i)+"/"+listdr[u])
+            sharpen_image(str(i)+"/"+listdr[u])
+            sp_noise(str(i)+"/"+listdr[u])
+
+##MAKE TXT FILES##
+# for i in range(52):
+#     listdr=os.listdir(str(i))
+#     for u in range(len(listdr)):
+#         name=listdr[u]
+#         name = name[:len(name)-3]
+#         name = name+"txt"
+#         with open("txt/"+name, 'w') as f:
+#             f.write(str(i)+" "+ "0.500000 0.500000 1.000000 1.000000")
